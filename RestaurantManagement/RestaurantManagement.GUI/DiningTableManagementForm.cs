@@ -428,12 +428,29 @@ public sealed class DiningTableManagementForm : Form
 
     private async Task RefreshTablesAsync()
     {
+        var codeFilter = _codeFilter.Text.Trim();
+        if (codeFilter.Any(character =>
+                !char.IsLetterOrDigit(character) &&
+                character != '-' &&
+                character != '_'))
+        {
+            MessageBox.Show(
+                this,
+                "Mã bàn không hợp lệ. Vui lòng nhập lại chỉ bằng chữ cái, chữ số, dấu gạch ngang (-) hoặc gạch dưới (_).",
+                "Mã bàn không hợp lệ",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+            _codeFilter.Focus();
+            _codeFilter.SelectAll();
+            return;
+        }
+
         try
         {
             var status = _statusFilter.SelectedIndex > 0
                 ? _statusFilter.SelectedItem?.ToString()
                 : null;
-            var tablesTask = _tableService.GetAllAsync(_codeFilter.Text, _areaFilter.Text, status);
+            var tablesTask = _tableService.GetAllAsync(codeFilter, _areaFilter.Text, status);
             var countsTask = _tableService.GetStatusCountsAsync();
             await Task.WhenAll(tablesTask, countsTask);
 
@@ -458,13 +475,17 @@ public sealed class DiningTableManagementForm : Form
         {
             var tables = await _tableService.GetAllAsync();
             using var editor = new DiningTableEditorForm(
+                async table =>
+                {
+                    await _tableService.AddAsync(table);
+                    return true;
+                },
                 areas: tables.Select(table => table.Area).Distinct(StringComparer.OrdinalIgnoreCase));
             if (editor.ShowDialog(this) != DialogResult.OK)
             {
                 return;
             }
 
-            await _tableService.AddAsync(editor.Table);
             await RefreshTablesAsync();
             _resultLabel.Text = "Đã thêm bàn thành công.";
         }
@@ -484,6 +505,7 @@ public sealed class DiningTableManagementForm : Form
         {
             var tables = await _tableService.GetAllAsync();
             using var editor = new DiningTableEditorForm(
+                updatedTable => _tableService.UpdateAsync(table.Code, updatedTable),
                 table,
                 tables.Select(item => item.Area).Distinct(StringComparer.OrdinalIgnoreCase));
             if (editor.ShowDialog(this) != DialogResult.OK)
@@ -491,16 +513,8 @@ public sealed class DiningTableManagementForm : Form
                 return;
             }
 
-            if (await _tableService.UpdateAsync(editor.Table))
-            {
-                await RefreshTablesAsync();
-                _resultLabel.Text = "Đã cập nhật thông tin bàn.";
-            }
-            else
-            {
-                _resultLabel.Text = "Bàn không còn tồn tại; danh sách đã được tải lại.";
-                await RefreshTablesAsync();
-            }
+            await RefreshTablesAsync();
+            _resultLabel.Text = "Đã cập nhật thông tin bàn.";
         }
         catch (ArgumentException exception)
         {

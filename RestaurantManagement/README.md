@@ -35,10 +35,10 @@ Tài khoản ở LocalDB không tự được sao chép sang SQL Server khác. N
 dotnet run --project .\RestaurantManagement.GUI
 ```
 
-Đăng nhập bằng tài khoản quản lý vừa khởi tạo. Tài khoản bị vô hiệu hóa (`IsActive = 0`) không thể đăng nhập. File cấu hình được copy vào thư mục chạy của GUI và công cụ khởi tạo DB khi build.
+Đăng nhập bằng tài khoản quản lý vừa khởi tạo. Sau khi xác thực thành công, ứng dụng mở thẳng màn hình quản lý bàn ăn; đóng màn hình hoặc chọn đăng xuất sẽ quay lại đăng nhập. Tài khoản bị vô hiệu hóa (`IsActive = 0`) không thể đăng nhập. File cấu hình được copy vào thư mục chạy của GUI và công cụ khởi tạo DB khi build.
 
 ## Quản lý bàn ăn
 
-Sau khi đăng nhập, chọn **Quản lý bàn ăn**. Chức năng hỗ trợ xem danh sách, tìm theo mã bàn/khu vực/trạng thái, xem chi tiết, thêm, chỉnh sửa khu vực và sức chứa, cập nhật trạng thái, và xóa sau khi xác nhận. Mã bàn là khóa chính; trạng thái gồm `Trống`, `Đã đặt`, `Đang phục vụ`, `Đang dọn`. Sức chứa phải lớn hơn 0. Chỉ xóa bàn đang `Trống`; khóa ngoại của dữ liệu liên quan cũng sẽ ngăn xóa bàn đang được tham chiếu.
+Màn hình quản lý bàn ăn hỗ trợ xem danh sách, tìm theo mã bàn/khu vực/trạng thái, xem chi tiết, thêm, chỉnh sửa khu vực và sức chứa, cập nhật trạng thái, và xóa sau khi xác nhận. Mã bàn là khóa chính; trạng thái gồm `Trống`, `Đã đặt`, `Đang phục vụ`, `Đang dọn`. Sức chứa phải lớn hơn 0. Chỉ xóa bàn đang `Trống`; khóa ngoại của dữ liệu liên quan cũng sẽ ngăn xóa bàn đang được tham chiếu.
 
 Nếu database đã được tạo từ trước, chạy lại toàn bộ `RestaurantManagement.DB/init.sql` trong SSMS để bổ sung bảng `dbo.BanAn`; script giữ nguyên dữ liệu và bảng đã có.
