@@ -115,21 +115,24 @@ public sealed class DiningTableRepository
     }
 
     public async Task<bool> UpdateAsync(
+        string originalCode,
         DiningTable table,
         CancellationToken cancellationToken = default)
     {
         const string query = """
             UPDATE dbo.BanAn
-            SET KhuVuc = @KhuVuc,
+            SET MaBan = @MaBan,
+                KhuVuc = @KhuVuc,
                 SucChua = @SucChua,
                 TrangThaiBan = @TrangThaiBan
-            WHERE MaBan = @MaBan;
+            WHERE MaBan = @MaBanCu;
             """;
 
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         await using var command = new SqlCommand(query, connection);
         AddTableParameters(command, table);
+        command.Parameters.Add("@MaBanCu", SqlDbType.NVarChar, 20).Value = originalCode;
 
         return await command.ExecuteNonQueryAsync(cancellationToken) == 1;
     }

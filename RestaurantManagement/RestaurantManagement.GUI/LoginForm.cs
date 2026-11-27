@@ -172,9 +172,9 @@ public sealed class LoginForm : Form
                 return;
             }
 
-            using var dashboard = new DashboardForm(manager, _diningTableService);
+            using var tableManagement = new DiningTableManagementForm(_diningTableService, manager);
             Hide();
-            dashboard.ShowDialog(this);
+            tableManagement.ShowDialog(this);
             Show();
             _passwordTextBox.Clear();
             _usernameTextBox.Focus();

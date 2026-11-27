@@ -48,10 +48,22 @@ public sealed class DiningTableService
         await _repository.AddAsync(table, cancellationToken);
     }
 
-    public async Task<bool> UpdateAsync(DiningTable table, CancellationToken cancellationToken = default)
+    public async Task<bool> UpdateAsync(
+        string originalCode,
+        DiningTable table,
+        CancellationToken cancellationToken = default)
     {
+        originalCode = originalCode.Trim();
         table = NormalizeAndValidate(table);
-        return await _repository.UpdateAsync(table, cancellationToken);
+
+        var existingTable = await _repository.GetByCodeAsync(table.Code, cancellationToken);
+        if (existingTable is not null &&
+            !string.Equals(existingTable.Code, originalCode, StringComparison.Ordinal))
+        {
+            throw new ArgumentException($"Mã bàn '{table.Code}' đã tồn tại.");
+        }
+
+        return await _repository.UpdateAsync(originalCode, table, cancellationToken);
     }
 
     public async Task<bool> UpdateStatusAsync(
@@ -100,7 +112,7 @@ public sealed class DiningTableService
 
         if (table.Capacity <= 0)
         {
-            throw new ArgumentException("Sức chứa phải lớn hơn 0.");
+            throw new ArgumentException("Sức chứa phải là số nguyên dương. Vui lòng nhập lại số lớn hơn 0.");
         }
 
         ValidateStatus(status);

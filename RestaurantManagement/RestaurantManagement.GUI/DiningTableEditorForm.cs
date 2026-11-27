@@ -1,3 +1,5 @@
+using System.Data.Common;
+using System.Globalization;
 using RestaurantManagement.BUS;
 using RestaurantManagement.DTO;
 
@@ -7,17 +9,23 @@ internal sealed class DiningTableEditorForm : Form
 {
     private readonly TextBox _codeTextBox = new();
     private readonly ComboBox _areaInput = new();
-    private readonly NumericUpDown _capacityInput = new();
+    private readonly TextBox _capacityInput = new();
     private readonly ComboBox _statusInput = new();
+    private readonly Func<DiningTable, Task<bool>> _saveAsync;
+    private int _capacityValue;
 
     public DiningTable Table => new(
         _codeTextBox.Text.Trim(),
         _areaInput.Text.Trim(),
-        (int)_capacityInput.Value,
+        _capacityValue,
         _statusInput.SelectedItem?.ToString() ?? string.Empty);
 
-    public DiningTableEditorForm(DiningTable? table = null, IEnumerable<string>? areas = null)
+    public DiningTableEditorForm(
+        Func<DiningTable, Task<bool>> saveAsync,
+        DiningTable? table = null,
+        IEnumerable<string>? areas = null)
     {
+        _saveAsync = saveAsync;
         Text = table is null ? "Thêm bàn ăn mới" : $"Chỉnh sửa bàn {table.Code}";
         StartPosition = FormStartPosition.CenterParent;
         FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -50,7 +58,6 @@ internal sealed class DiningTableEditorForm : Form
 
         AddField("Mã bàn *", 108, _codeTextBox);
         _codeTextBox.MaxLength = 20;
-        _codeTextBox.ReadOnly = table is not null;
         _codeTextBox.Text = table?.Code ?? string.Empty;
         _codeTextBox.PlaceholderText = "Ví dụ: B09";
 
@@ -69,10 +76,9 @@ internal sealed class DiningTableEditorForm : Form
         _areaInput.Text = table?.Area ?? string.Empty;
 
         AddField("Sức chứa *", 252, _capacityInput);
-        _capacityInput.Minimum = 1;
-        _capacityInput.Maximum = 1000;
-        _capacityInput.Value = table?.Capacity is > 0 and <= 1000 ? table.Capacity : 4;
-        _capacityInput.TextAlign = HorizontalAlignment.Left;
+        _capacityInput.MaxLength = 10;
+        _capacityInput.Text = table?.Capacity.ToString(CultureInfo.InvariantCulture) ?? "4";
+        _capacityInput.PlaceholderText = "Ví dụ: 4";
 
         AddField("Trạng thái *", 324, _statusInput);
         _statusInput.DropDownStyle = ComboBoxStyle.DropDownList;
@@ -95,7 +101,7 @@ internal sealed class DiningTableEditorForm : Form
             426,
             primary: true);
         saveButton.Width = 108;
-        saveButton.Click += (_, _) =>
+        saveButton.Click += async (_, _) =>
         {
             if (string.IsNullOrWhiteSpace(_codeTextBox.Text) ||
                 string.IsNullOrWhiteSpace(_areaInput.Text))
@@ -109,6 +115,74 @@ internal sealed class DiningTableEditorForm : Form
                 return;
             }
 
+            if (!int.TryParse(
+                    _capacityInput.Text,
+                    NumberStyles.Integer,
+                    CultureInfo.InvariantCulture,
+                    out _capacityValue) ||
+                _capacityValue <= 0)
+            {
+                MessageBox.Show(
+                    this,
+                    "Sức chứa phải là số nguyên dương. Vui lòng nhập lại số lớn hơn 0.",
+                    "Sức chứa không hợp lệ",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                _capacityInput.Focus();
+                _capacityInput.SelectAll();
+                return;
+            }
+
+            if (table is not null && IsInUseStatus(table.Status))
+            {
+                var answer = MessageBox.Show(
+                    this,
+                    "Bàn đang trong sử dụng bạn có muốn tiếp tục thay đổi không?",
+                    "Xác nhận thay đổi bàn",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning);
+                if (answer != DialogResult.Yes)
+                {
+                    DialogResult = DialogResult.Cancel;
+                    Close();
+                    return;
+                }
+            }
+
+            try
+            {
+                if (!await _saveAsync(Table))
+                {
+                    MessageBox.Show(
+                        this,
+                        "Bàn không còn tồn tại. Vui lòng kiểm tra lại thông tin.",
+                        "Không thể lưu",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                    return;
+                }
+            }
+            catch (ArgumentException exception)
+            {
+                MessageBox.Show(
+                    this,
+                    exception.Message,
+                    "Thông tin không hợp lệ",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+            catch (DbException exception)
+            {
+                MessageBox.Show(
+                    this,
+                    $"Không thể lưu thông tin bàn. Vui lòng kiểm tra lại rồi thử lại.\n\n{exception.Message}",
+                    "Lỗi lưu dữ liệu",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+                return;
+            }
+
             DialogResult = DialogResult.OK;
             Close();
         };
@@ -117,6 +191,12 @@ internal sealed class DiningTableEditorForm : Form
         AcceptButton = saveButton;
         CancelButton = cancelButton;
     }
+
+    private static bool IsInUseStatus(string status) =>
+        string.Equals(status, "Đã đặt", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(status, "Đang phục vụ", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(status, "Đang sử dụng", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(status, "Đang trong sử dụng", StringComparison.OrdinalIgnoreCase);
 
     private void AddField(string labelText, int top, Control control)
     {
