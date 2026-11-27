@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\RestaurantManagement.BUS\RestaurantManagement.BUS.csproj" />
+    <ProjectReference Include="..\RestaurantManagement.DAL\RestaurantManagement.DAL.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\database.connection.json" Link="database.connection.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

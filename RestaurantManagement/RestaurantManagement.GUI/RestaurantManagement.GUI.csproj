@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\RestaurantManagement.BUS\RestaurantManagement.BUS.csproj" />
+    <ProjectReference Include="..\RestaurantManagement.DTO\RestaurantManagement.DTO.csproj" />
+    <ProjectReference Include="..\RestaurantManagement.DAL\RestaurantManagement.DAL.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\database.connection.json" Link="database.connection.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,5 @@
+{
+  "ConnectionStrings": {
+    "RestaurantManagement": "Server=DESKTOP-TT7U6R7;Database=RestaurantManagement;Integrated Security=true;TrustServerCertificate=true"
+  }
+}
